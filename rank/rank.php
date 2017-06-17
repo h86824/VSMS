@@ -13,7 +13,7 @@ include $_SERVER["DOCUMENT_ROOT"].'/VSMS/included/login_check_inc.php';
 
 <body>
 <br><br>
-
+<a href="/VSMS/rank/rank_consumption.php">會員下載排行</a>
 <form>
 
 類別<SELECT name="type">

@@ -20,6 +20,7 @@ if($_SESSION["sess_auth"] == 1){
 }
 ?>
 
+<br><h3>查詢電影</h3>
 <form method="get">
 電影名稱 <input type="text" name="movie_name"> 
 發售日期 從 <input type="date" name="release_from" placeholder="2000-01-01">
@@ -49,9 +50,9 @@ if(isset($_GET["sub"])){
 	if(empty($_GET["actor_name"]))
 		$r = $db->query_movie(null,$_GET["movie_name"], $_GET["release_from"], $_GET["release_to"], $_GET["genre_type"], $_GET["sort_type"]);
 	else
-		$r = $db->query_movie_with_actor(null,$_GET["movie_name"], $_GET["release_from"], $_GET["release_to"], $_GET["actor_name"] ,$_GET["film_type"], $_GET["sort_type"]);
-		
-	echo '<br><table border="1"><tr><td>id</td><td>電影名稱</td><td>上映日期</td><td>價格</td><td>下載次數</td></tr>';
+		$r = $db->query_movie_with_actor(null,$_GET["movie_name"], $_GET["release_from"], $_GET["release_to"], $_GET["actor_name"] ,$_GET["genre_type"], $_GET["sort_type"]);
+	
+	echo '<br><table border="1"><tr><td>id</td><td>電影名稱</td><td>上映日期</td><td>價格</td></tr>';
 	for($i = 0 ; $i < $r->rowCount() && $i<10 ; $i++){
 		$obj = $r->fetch(PDO::FETCH_OBJ);
 		echo '<tr>';
@@ -59,8 +60,7 @@ if(isset($_GET["sub"])){
 		echo '<td>' .$obj->title .'</td>';
 		echo '<td>' .$obj->release_date .'</td>';
 		echo '<td>' .$obj->charge_per_download .'</td>';
-		echo '<td>'.'</td>';
-		
+				
 		if($_SESSION["sess_auth"] == 1)
 			echo '<td>' 
 			.'<form action="/VSMS/movie/update_movie.php">

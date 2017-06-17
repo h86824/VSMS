@@ -17,7 +17,7 @@ if($_SESSION["sess_auth"] == 1){
 	echo '<a href="/VSMS/member/insert_member.php">新增會員</a>';
 }
 ?>
-
+<br><h3>查詢會員</h3>
 <form method="get" name="form_query">
 會員姓名<input type="text" name="name"> 
 會員生日<input type="date" name="birthday" placeholder="2000-01-01"> 

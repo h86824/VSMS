@@ -74,8 +74,13 @@ class AccessBD{
 			return array(false , "新增失敗");
 	}
 	
-	function query_movie($movie_id , $title , $release_from , $release_to , $film_type, $sort_type){
-		$sql = "SELECT movie_id , title , release_date , charge_per_download FROM movie WHERE true";
+	function query_movie($movie_id , $title , $release_from , $release_to , $genre_name, $sort_type){
+		$sql = "SELECT movie_id , title , release_date , charge_per_download FROM movie ";
+		
+		if($genre_name!= null && $genre_name != "--")
+			$sql = $sql ."NATURAL JOIN genre WHERE genre_name=:genre_name";
+		else 	
+			$sql = $sql ." WHERE true";
 		
 		if($movie_id != null)
 			$sql = $sql ." && movie_id = :movie_id";
@@ -85,7 +90,7 @@ class AccessBD{
 			$sql = $sql ." && release_date >= :release_from";
 		if($release_to != null)
 			$sql = $sql ." ORDER BY :sort_type";
-			
+		
 		if($sort_type!= null){
 			switch($sort_type){
 				case "release_date_descending":
@@ -106,6 +111,8 @@ class AccessBD{
 			$title = '%' .$title . '%';
 			$prep->bindValue(":title", $title);
 		}
+		if($genre_name!= null)
+			$prep->bindValue(":genre_name", $genre_name);
 		if($release_from!= null)$prep->bindValue(":release_from", $release_from);
 		if($release_to!= null)$prep->bindValue(":release_to", $release_to);
 		
@@ -114,8 +121,13 @@ class AccessBD{
 		return $prep;
 	}
 	
-	function query_movie_with_actor($movie_id , $title , $release_from , $release_to , $actor , $film_type, $sort_type){
-		$sql = "SELECT movie_id , title , release_date , charge_per_download FROM movie_and_actor WHERE true";
+	function query_movie_with_actor($movie_id , $title , $release_from , $release_to , $actor , $genre_name, $sort_type){
+		$sql = "SELECT movie_id , title , release_date , charge_per_download FROM movie_and_actor ";
+		
+		if($genre_name!= null && $genre_name != "--")
+			$sql = $sql ."NATURAL JOIN genre WHERE genre_name=:genre_name";
+		else
+			$sql = $sql ." WHERE true";
 		
 		if($movie_id != null)
 			$sql = $sql ." && movie_id = :movie_id";
@@ -149,6 +161,8 @@ class AccessBD{
 			$title = '%' .$title . '%';
 			$prep->bindValue(":title", $title);
 		}
+		if($genre_name!= null)
+			$prep->bindValue(":genre_name", $genre_name);
 		if($actor != null){
 			$actor= '%' .$actor. '%';
 			$prep->bindValue(":actor", $actor);
@@ -520,6 +534,40 @@ class AccessBD{
 			GROUP BY actor_id
 			HAVING MAX(number)';
 		
+		$prep = $this->m_db->prepare($sql);
+		$prep->execute( array($member_id) );
+		return $prep;
+	}
+	
+	function query_favorite_actor($member_id){
+		$sql = 'SELECT name , birthday
+			FROM actor NATURAL JOIN(
+			SELECT actor.actor_id , name , COUNT(*) AS number
+			FROM act INNER JOIN actor
+			ON act.actor_id = actor.actor_id AND gender = "male"
+			WHERE movie_id in
+			(SELECT movie_id
+			FROM member NATURAL JOIN download NATURAL JOIN movie
+			WHERE member_id = ?)
+			GROUP BY actor_id) AS T
+			GROUP BY actor_id
+			HAVING MAX(number)';
+		
+		$prep = $this->m_db->prepare($sql);
+		$prep->execute( array($member_id) );
+		return $prep;
+	}
+	
+	function query_consumption_ranking($limit){
+		$sql = 'SELECT member_id , name , birthday , SUM(charge_per_download) AS total 
+			FROM member NATURAL JOIN download NATURAL JOIN movie
+			GROUP BY member_id 
+			LIMIT '.$limit;
+		
+		$prep = $this->m_db->prepare($sql);
+		$prep->execute();
+		
+		return $prep;
 	}
 }
 ?>

@@ -1,6 +1,5 @@
 <?php
 session_start();
-include $_SERVER["DOCUMENT_ROOT"].'/VSMS/included/menu_inc.php';
 include $_SERVER["DOCUMENT_ROOT"].'/VSMS/included/login_check_inc.php';
 ?>
 
@@ -30,8 +29,10 @@ function ValidateNumber(e, pnumber)
 </head>
 
 <body>
-<br><br>
 
+<?php include $_SERVER["DOCUMENT_ROOT"].'/VSMS/included/menu_inc.php';?>
+<br><br><a href="/VSMS/movie/movie.php">查詢電影</a>
+<br><h3>新增電影</h3>
 <form action= <?php echo $_SERVER["PHP_SELF"]?> method="post">
 電影名稱<input type="text" name="movie_title"><br>
 上映日期<input type="date" name="release_date" placeholder="2000-01-01"><br>

@@ -11,7 +11,8 @@ include $_SERVER["DOCUMENT_ROOT"].'/VSMS/included/login_check_inc.php';
 <body>
 <?php include $_SERVER["DOCUMENT_ROOT"].'/VSMS/included/menu_inc.php';?>
 <br><br>
-
+<a href="/VSMS/director/director.php">查詢導演</a><br>
+<h3>新增導演</h3>
 <form action= <?php echo $_SERVER["PHP_SELF"]?> method="post">
 導演姓名<input type="text" name="name"><br>
 導演生日<input type="date" name="birthday" placeholder="2000-01-01"><br>

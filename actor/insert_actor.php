@@ -9,7 +9,10 @@ include $_SERVER["DOCUMENT_ROOT"].'/VSMS/included/login_check_inc.php';
 </head>
 
 <body>
-<form action= <?php echo $_SERVER["PHP_SELF"]?> method="post">
+<br><br><a href="/VSMS/actor/actor.php">查詢演員</a>
+<br><h3>查詢演員</h3>
+
+<form action= <?php echo $_SERVER["PHP_SELF"]?> method="post" class="form">
 演員姓名<input type="text" name="actor_name"><br>
 演員生日<input type="date" name="actor_birthday" placeholder="2000-01-01"><br>
 演員性別<select name="gender">

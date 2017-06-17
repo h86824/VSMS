@@ -20,8 +20,8 @@ if($_SESSION["sess_auth"] == 1){
 }
 ?>
 
+<br><h3>查詢導演</h3>
 <form>
-<br>
 導演姓名 <input type="text" name="name">
 導演生日 <input type="date" name="birthday" placeholder="2000-01-01">
 <input type="submit" name="sub">

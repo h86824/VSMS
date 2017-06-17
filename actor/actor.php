@@ -16,6 +16,7 @@ if($_SESSION["sess_auth"] == 1){
 	echo '<a href="/VSMS/actor/insert_actor.php">新增演員</a>';
 }
 ?>
+<br><h3>查詢演員</h3>
 <form method="get">
 演員名字<input type="text" name="actor_name">
 <input type="submit" value="查詢"><br>
