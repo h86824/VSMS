@@ -7,6 +7,12 @@ include $_SERVER["DOCUMENT_ROOT"].'/VSMS/included/login_check_inc.php';
 <html>
 <head>
 <?php include $_SERVER["DOCUMENT_ROOT"].'/VSMS/included/header_inc.php'?>
+
+<script>
+function updateActor(actorId){
+	location.assign("/VSMS/actor/update_actor.php?actor_id="+actorId);
+}
+</script>
 </head>
 
 <body>

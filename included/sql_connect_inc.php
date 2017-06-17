@@ -75,7 +75,7 @@ class AccessBD{
 	}
 	
 	function query_movie($movie_id , $title , $release_from , $release_to , $genre_name, $sort_type){
-		$sql = "SELECT movie_id , title , release_date , charge_per_download FROM movie ";
+		$sql = "SELECT movie_id , title , release_date , company , charge_per_download FROM movie ";
 		
 		if($genre_name!= null && $genre_name != "--")
 			$sql = $sql ."NATURAL JOIN genre WHERE genre_name=:genre_name";
@@ -122,7 +122,7 @@ class AccessBD{
 	}
 	
 	function query_movie_with_actor($movie_id , $title , $release_from , $release_to , $actor , $genre_name, $sort_type){
-		$sql = "SELECT movie_id , title , release_date , charge_per_download FROM movie_and_actor ";
+		$sql = "SELECT movie_id , title , release_date , company , charge_per_download FROM movie_and_actor ";
 		
 		if($genre_name!= null && $genre_name != "--")
 			$sql = $sql ."NATURAL JOIN genre WHERE genre_name=:genre_name";
@@ -175,13 +175,14 @@ class AccessBD{
 		return $prep;
 	}
 	
-	function update_movie($movie_id , $title , $release_date , $charge_per_download){
-		$sql = "UPDATE movie SET title=:title , release_date=:release_date , charge_per_download=:charge_per_download WHERE movie_id=:movie_id";
+	function update_movie($movie_id , $title , $release_date , $company, $charge_per_download){
+		$sql = "UPDATE movie SET title=:title , release_date=:release_date , company=:company , charge_per_download=:charge_per_download WHERE movie_id=:movie_id";
 		
 		$prep = $this->m_db->prepare($sql);
 		$prep->bindValue(":movie_id", $movie_id);
 		$prep->bindValue(":title", $title);
 		$prep->bindValue(":release_date", $release_date);
+		$prep->bindValue(":company", $company);
 		$prep->bindValue(":charge_per_download", $charge_per_download);
 		try{
 			$prep->execute();
@@ -217,6 +218,19 @@ class AccessBD{
 		$prep->execute();
 		
 		return $prep;
+	}
+	
+	function update_actor($actor_id , $name , $birthday, $gender){
+		$sql = "UPDATE actor SET name=:name , birthday=:birthday , gender=:gender WHERE actor_id=:actor_id;";
+		
+		$prep = $this->m_db->prepare($sql);
+		$prep->bindValue(":actor_id", $actor_id);
+		$prep->bindValue(":name", $name);
+		$prep->bindValue(":birthday", $birthday);
+		$prep->bindValue(":gender", $gender);
+		$prep->execute();
+		
+		return $prep->rowCount();
 	}
 	
 	function insert_actor($actor_name , $actor_birthday , $actor_gender){
@@ -311,6 +325,7 @@ class AccessBD{
 		}
 	}
 	
+	
 	function query_direct($movie_id){
 		$sql = "SELECT * FROM movie NATURAL JOIN direct NATURAL JOIN director WHERE movie_id=?";
 		$prep = $this->m_db->prepare($sql);
@@ -400,7 +415,7 @@ class AccessBD{
 		}
 		
 		if($name != null){
-			$sql = $sql .' AND name=:name';
+			$sql = $sql .' AND name LIKE :name';
 		}
 		if($birthday != null){
 			$sql = $sql .' AND birthday=:birthday';
@@ -417,6 +432,7 @@ class AccessBD{
 		}
 		
 		if($name != null){
+			$name = '%'.$name.'%';
 			$prep->bindValue(":name", $name);
 		}
 		
@@ -479,7 +495,7 @@ class AccessBD{
 	}
 	
 	function query_user_download_record($member_name){
-		$sql = "SELECT title , release_date , date FROM downloads_view WHERE member_id=?";
+		$sql = "SELECT title , release_date , date FROM downloads_view WHERE member_id=? ORDER BY date DESC";
 		
 		$prep = $this->m_db->prepare($sql);
 		
@@ -501,7 +517,7 @@ class AccessBD{
 			$sql = $sql ." AND :date_to >= date";
 		}
 		
-		$sql = $sql ." GROUP BY movie_id ";
+		$sql = $sql ." GROUP BY movie_id ORDER BY count DESC";
 		
 		$prep = $this->m_db->prepare($sql);
 		
@@ -520,53 +536,148 @@ class AccessBD{
 		return $prep;
 	}
 	
-	function query_favorite_actress($member_id){
-		$sql = 'SELECT name , birthday
-			FROM actor NATURAL JOIN(
-			SELECT actor.actor_id , name , COUNT(*) AS number
-			FROM act INNER JOIN actor 
-			ON act.actor_id = actor.actor_id AND gender = "female" 
-			WHERE movie_id in
-			(SELECT movie_id
-			FROM member NATURAL JOIN download NATURAL JOIN movie
-			WHERE member_id = ?)
-			GROUP BY actor_id) AS T
-			GROUP BY actor_id
-			HAVING MAX(number)';
+	function query_movie_download_with_genre($member_name , $date_from , $date_to ,$genre_name){
+		$sql = "SELECT title , release_date , COUNT(*) as count FROM downloads_view NATURAL JOIN genre WHERE true";
+		
+		if($member_name!= null){
+			$sql = $sql ." AND name=:name";
+		}
+		if($date_from != null){
+			$sql = $sql ." AND :date_from <= date";
+		}
+		if($date_to != null){
+			$sql = $sql ." AND :date_to >= date";
+		}
+		if($genre_name != null){
+			$sql = $sql ." AND genre_name = :genre_name";
+		}
+		
+		$sql = $sql ." GROUP BY movie_id ORDER BY count DESC";
 		
 		$prep = $this->m_db->prepare($sql);
-		$prep->execute( array($member_id) );
+		
+		if($member_name!= null){
+			$prep->bindValue(":name", $member_name);
+		}
+		if($date_from != null){
+			$prep->bindValue(":date", $date_from);
+		}
+		if($date_to != null){
+			$prep->bindValue(":date", $date_from);
+		}
+		if($genre_name != null){
+			$prep->bindValue(":genre_name", $genre_name);
+		}
+		
+		$prep->execute();
+		
+		return $prep;
+	}
+	
+	function query_favorite_actress($member_id){
+		$sql = 'SELECT name , birthday 
+			FROM actor NATURAL JOIN( 
+			SELECT actor.actor_id , name , COUNT(*) AS number 
+			FROM act INNER JOIN actor 
+			ON act.actor_id = actor.actor_id AND gender = "female" 
+			WHERE movie_id in 
+			(SELECT movie_id 
+			FROM member NATURAL JOIN download NATURAL JOIN movie 
+			WHERE member_id = ?) 
+			GROUP BY actor_id) AS T 
+            WHERE number = (SELECT MAX(number) 
+			FROM actor NATURAL JOIN( 
+			SELECT actor.actor_id , name , COUNT(*) AS number 
+			FROM act INNER JOIN actor 
+			ON act.actor_id = actor.actor_id AND gender = "female" 
+			WHERE movie_id in 
+			(SELECT movie_id 
+			FROM member NATURAL JOIN download NATURAL JOIN movie 
+			WHERE member_id = ?) 
+			GROUP BY actor_id) AS T)';
+		
+		$prep = $this->m_db->prepare($sql);
+		$prep->execute( array($member_id , $member_id) );
 		return $prep;
 	}
 	
 	function query_favorite_actor($member_id){
-		$sql = 'SELECT name , birthday
-			FROM actor NATURAL JOIN(
-			SELECT actor.actor_id , name , COUNT(*) AS number
-			FROM act INNER JOIN actor
-			ON act.actor_id = actor.actor_id AND gender = "male"
-			WHERE movie_id in
-			(SELECT movie_id
-			FROM member NATURAL JOIN download NATURAL JOIN movie
-			WHERE member_id = ?)
-			GROUP BY actor_id) AS T
-			GROUP BY actor_id
-			HAVING MAX(number)';
+		$sql = 'SELECT name , birthday 
+			FROM actor NATURAL JOIN( 
+			SELECT actor.actor_id , name , COUNT(*) AS number 
+			FROM act INNER JOIN actor 
+			ON act.actor_id = actor.actor_id AND gender = "male" 
+			WHERE movie_id in 
+			(SELECT movie_id 
+			FROM member NATURAL JOIN download NATURAL JOIN movie 
+			WHERE member_id = ?) 
+			GROUP BY actor_id) AS T 
+            WHERE number = (SELECT MAX(number) 
+			FROM actor NATURAL JOIN( 
+			SELECT actor.actor_id , name , COUNT(*) AS number 
+			FROM act INNER JOIN actor 
+			ON act.actor_id = actor.actor_id AND gender = "male" 
+			WHERE movie_id in 
+			(SELECT movie_id 
+			FROM member NATURAL JOIN download NATURAL JOIN movie 
+			WHERE member_id = ?) 
+			GROUP BY actor_id) AS T)';
 		
 		$prep = $this->m_db->prepare($sql);
-		$prep->execute( array($member_id) );
+		$prep->execute( array($member_id , $member_id) );
 		return $prep;
 	}
 	
 	function query_consumption_ranking($limit){
 		$sql = 'SELECT member_id , name , birthday , SUM(charge_per_download) AS total 
 			FROM member NATURAL JOIN download NATURAL JOIN movie
-			GROUP BY member_id 
+			GROUP BY member_id ORDER BY total DESC
 			LIMIT '.$limit;
 		
 		$prep = $this->m_db->prepare($sql);
 		$prep->execute();
 		
+		return $prep;
+	}
+	
+	function delete_movie($movie_id){
+		$sql = "DELETE FROM movie WHERE movie_id=?";
+		return $this->m_db->prepare($sql)->execute( array($movie_id ));
+	}
+	
+	function delete_actor($actor_id){
+		$sql = "DELETE FROM actor WHERE actor_id=?";
+		return $this->m_db->prepare($sql)->execute( array($actor_id));
+	}
+	
+	function delete_director($director_id){
+		$sql = "DELETE FROM director WHERE director_id=?";
+		return $this->m_db->prepare($sql)->execute( array($director_id));
+	}
+	
+	function delete_member($member_id){
+		$sql = "DELETE FROM member WHERE member_id=?";
+		return $this->m_db->prepare($sql)->execute( array($member_id));
+	}
+	
+	function query_genre_gross_most_month($year){
+		$sql = 'SELECT *
+				FROM
+				(SELECT genre_name , MONTH(date) month , SUM(charge_per_download) AS number
+				FROM download NATURAL JOIN genre NATURAL JOIN movie
+				WHERE YEAR(date) = ?
+				GROUP BY month , genre_name)AS T
+				WHERE (T.genre_name , number) in
+				(SELECT genre_name , MAX(number) AS max_number
+				FROM
+				(SELECT genre_name , MONTH(date) month , SUM(charge_per_download) AS number
+				FROM download NATURAL JOIN genre NATURAL JOIN movie
+				WHERE YEAR(date) = ?
+				GROUP BY month , genre_name) AS n
+				GROUP BY genre_name)
+				ORDER BY genre_name';
+		$prep = $this->m_db->prepare($sql);
+		$prep->execute(array($year,$year));
 		return $prep;
 	}
 }

@@ -30,7 +30,7 @@ if($_SESSION["sess_auth"] == 1){
 <?php
 require $_SERVER["DOCUMENT_ROOT"] .'/VSMS/included/sql_connect_inc.php';
 
-if(isset($_GET["sub"])){
+if(isset($_GET["sub"]) && (!empty($_GET["name"]) || !empty($_GET["birthday"]))){
 	$db = new AccessBD();
 	$db->connect();
 	$r = $db->query_director(null, $_GET["name"], $_GET["birthday"], null);

@@ -2,6 +2,8 @@
 
 session_start();
 include $_SERVER["DOCUMENT_ROOT"].'/VSMS/included/login_check_inc.php';
+if($_SESSION["sess_auth"] != 1)
+	header('Location:/VSMS/index.php');
 ?>
 
 <?php 

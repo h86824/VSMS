@@ -1,6 +1,8 @@
 <?php
 session_start();
 include $_SERVER["DOCUMENT_ROOT"].'/VSMS/included/login_check_inc.php';
+if($_SESSION["sess_auth"] != 1)
+	header('Location:/VSMS/index.php');
 ?>
 
 <html>
@@ -57,6 +59,7 @@ function selectActor(actorID){
 }
 
 function update_movie(){
+	
 	xmlhttp=new XMLHttpRequest();
 	xmlhttp.onreadystatechange=function(){
 		if (xmlhttp.readyState==4 && xmlhttp.status==200){
@@ -66,11 +69,13 @@ function update_movie(){
 		}
 	}
 	
-	xmlhttp.open("GET",
-			"update_movie_page.php?movie_id="+document.getElementById("movieID").value
-			+"&title="+document.getElementById("movie_title").value
-			+"&release_date="+document.getElementById("release_date").value
-			+"&charge_per_download="+document.getElementById("price").value ,true);
+	var text = "update_movie_page.php?movie_id="+document.getElementById("movieID").value
+	+"&title="+document.getElementById("movie_title").value
+	+"&release_date="+document.getElementById("release_date").value
+	+"&company="+document.getElementById("company_name").value
+	+"&charge_per_download="+document.getElementById("price").value;
+	xmlhttp.open("GET", text
+			 ,true);
 	xmlhttp.send();
 	document.getElementById("change_check_div").innerHTML=
 		'<button type="button" onclick="update_movie()">修改基本資訊</button>'
@@ -160,6 +165,27 @@ function deleteGenre(genreName){
 	xmlhttp.send(parm);
 }
 
+function deleteMovie(){
+	
+	
+	if(confirm("確定要刪除嗎")){
+		var url ="/VSMS/movie/delete_movie.php";
+		var id = document.getElementById("movieID").value;
+		var parm="movie_id="+id;
+			
+		xmlhttp=new XMLHttpRequest();
+		xmlhttp.onreadystatechange=function(){
+			if (xmlhttp.readyState==4 && xmlhttp.status==200){
+				location.replace("/VSMS/movie/movie.php");
+			}
+		}
+		
+		xmlhttp.open("POST", url ,true);
+		xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+		xmlhttp.send(parm);
+	}
+}
+
 </script>
 
 </head>
@@ -167,7 +193,8 @@ function deleteGenre(genreName){
 
 <?php include $_SERVER["DOCUMENT_ROOT"].'/VSMS/included/menu_inc.php'?>
 <br><br>
-
+<a href="/VSMS/movie/movie.php">查詢電影</a>
+<h3>編輯電影</h3>
 <?php
 
 if($_GET["movie_id"] != null){
@@ -175,17 +202,18 @@ if($_GET["movie_id"] != null){
 	$db = new AccessBD();
 	$db->connect();
 	$r = $db->query_movie($_GET["movie_id"] , null , null , null , null , null);
-	
+	echo '<button type="button" onclick="deleteMovie()">刪除電影</button><br><br>';
 	echo "<form>";
 	for($i = 0 ; $i < $r->rowCount() && $i<10 ; $i++){
 		$obj = $r->fetch(PDO::FETCH_OBJ);
 		echo '<input type=hidden value=' .$obj->movie_id.' id="movieID" name="movie_id">';
 		echo '電影名稱 <input type=text name=movie_title id=movie_title value=' .$obj->title .'><br>';
 		echo '上映日期 <input type="date" name="release_date" id=release_date placeholder="2000-01-01" value=' .$obj->release_date .'><br>';
+		echo '發行公司 <input type="text" name="company_name" id="company_name" value="' .$obj->company.'"><br>';
 		echo '下載價錢 <input type="text" style="ime-mode:disabled" id=price onkeyup="return ValidateNumber(this,value)" name="price" value=' .$obj->charge_per_download.'><br>';
 		echo '<div id="change_check_div"><button type="button" onclick="update_movie()">修改基本資訊</button></div>';
 		
-		echo '電影類型:';
+		echo '<br>電影類型:';
 		include $_SERVER["DOCUMENT_ROOT"].'/VSMS/included/getGenreList.php';
 		echo '<button type="button" onclick="insertGenre()">新增類型</button><br>';
 		$r = $db->query_genre_from_movie($_GET["movie_id"]);
